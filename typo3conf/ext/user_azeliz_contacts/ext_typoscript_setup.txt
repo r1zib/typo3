@@ -1,0 +1,6 @@
+plugin.user_azelizcontacts_pi1 {
+    #Template File
+    templateFormulaires = EXT:user_azeliz_contacts/pi1/static/formulaires.html
+    templateJS = EXT:user_azeliz_contacts/pi1/static/load-click-ajax.js
+    templateMessage = EXT:user_azeliz_contacts/pi1/static/message.html
+}

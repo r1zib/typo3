@@ -1,0 +1,196 @@
+<!-- ###TEMPLATE### -->
+<div style="display: none">
+    <div id='contact_default'>
+        <h2>Contactez nke</h2>
+        <div class="ajax-replace-content">
+            <form name="contact_default" method="post" action="###URL###">
+                <table>
+                    <tr><td><label for="LastName" >Nom :</label></td>
+                    <td><input name="LastName" type="text" value="###LastName###" class="required ###LastName_erreur_class###">###LastName_erreur###</td>
+                    </tr>
+    
+                    <tr><td><label for="FirstName" >Prénom :</label></td>
+                    <td><input name="FirstName" type="text" value="###FirstName###" class="required ###FirstName_erreur_class###">###FirstName_erreur###</td>
+                    </tr>
+                
+                    <tr><td><label for="Telephone" >Téléphone :</label></td>
+                    <td><input name="Telephone" type="text" value="###Telephone###" class="required ###Telephone_erreur_class###">###Telephone_erreur###</td>
+                    </tr>
+                    
+                    <tr><td><label for="Email" >Email :</label></td>
+                    <td><input name="Email" type="text" value="###Email###" class="required ###Email_erreur_class###">###Email_erreur###</td>
+                    </tr>
+    
+                    <tr><td><label for="Objet" >Objet :</label></td>
+                    <td><input name="Objet" id="objet" type="text" value="###Objet###" class="required ###Objet_erreur_class###">###Objet_erreur###</td>
+                    </tr>
+        
+                    <tr><td><label for="Message">Message :</label></td>
+                    <td><textarea rows="10" cols="40" name="Message" id="Message" type="text" class="required ###Message_erreur_class###">###Message###</textarea>
+                        ###Message_erreur###
+                    </td></tr>
+        
+                    <tr><td></td>
+        
+                    <td><input value="Envoyer" type="submit">
+                        <input type="hidden" name="action" value="validation"/>
+                        <input type="hidden" name="formname" value="contact_default"/>
+                        <input type="hidden" name="whatId" value=""/>
+                    </td></tr>
+                </table>
+                ###Maj_erreur###
+            </form>
+        </div>
+    </div>
+    <div id='contact_panier'>
+        <h2>Cette offre m'intéresse</h2>
+        <div class="ajax-replace-content">
+            <form name="contact_panier" method="post" action="###URL###">
+                <table>
+                    <tr><td><label for="LastName">Nom :</label></td>
+                    <td><input name="LastName" type="text" value="###LastName###" class="required ###LastName_erreur_class###">###LastName_erreur###</td>
+                    </tr>
+    
+                    <tr><td><label for="FirstName">Prénom :</label></td>
+                    <td><input name="FirstName" type="text" value="###FirstName###" class="required ###FirstName_erreur_class###">###FirstName_erreur###</td>
+                    </tr>
+    
+                    <tr><td><label for="Telephone">Téléphone :</label></td>
+                    <td><input name="Telephone" type="text" value="###Telephone###" class="required ###Telephone_erreur_class###">###Telephone_erreur###</td>
+                    </tr>
+                        
+                    <tr><td><label for="Email" >Email :</label></td>
+                    <td><input name="Email" type="text" value="###Email###" class="required ###Email_erreur_class###">###Email_erreur###</td>
+                    </tr>
+        
+                    <tr><td><label for="Message">Message :</label></td>
+                    <td><textarea rows="10" cols="40" name="Message" id="Message" type="text" class="required ###Message_erreur_class###">###Message###</textarea>
+                        ###Message_erreur###
+                    </td></tr>
+        
+                    <tr><td></td>
+        
+                    <td><input value="Envoyer" type="submit">
+                        <input type="hidden" name="Objet" value="###Objet###">
+                        <input type="hidden" name="action" value="validation"/>
+                        <input type="hidden" name="formname" value="contact_panier"/>
+                        <input type="hidden" name="zone" value="###Zone###"/>
+                        <input type="hidden" name="whatId" value=""/>
+                    </td></tr>
+                </table>
+                ###Maj_erreur###
+            </form>
+        </div>
+    </div>
+    <div id='contact_ensavoirplus'>
+        <h2>En savoir +</h2>
+        <div class="ajax-replace-content">
+            <form name="contact_ensavoirplus" method="post" action="###URL###" >
+                <table>
+                    <tr><td><label for="LastName" >Nom :</label> </td>
+                    <td><input name="LastName" type="text" value="###LastName###" class="required ###LastName_erreur_class###">###LastName_erreur###</td>
+                    </tr>
+    
+                    <tr><td><label for="FirstName" >Prénom :</label></td>
+                    <td><input name="FirstName" type="text" value="###FirstName###" class="required ###FirstName_erreur_class###">###FirstName_erreur###</td>
+                    </tr>
+    
+                    <tr><td><label for="Telephone" >Téléphone :</label> </td>
+                    <td><input name="Telephone" type="text" value="###Telephone###" class="required ###Telephone_erreur_class###" > ###Telephone_erreur###</td>
+                    </tr>
+                        
+                    <tr><td><label for="Email" >Email :</label> </td>
+                    <td><input name="Email" type="text" value="###Email###" class="required ###Email_erreur_class###" > ###Email_erreur###</td>
+                    </tr>
+        
+                    <tr><td><label for="Message">Message :</label></td>
+                    <td><textarea rows="10" cols="40" name="Message" id="Message" type="text" class="required ###Message_erreur_class###" >###Message###</textarea>
+                        ###Message_erreur###
+                    </td></tr>
+        
+                    <tr><td></td>
+        
+                    <td><input value="Envoyer" type="submit">
+                        <input type="hidden" name="Objet" value="###Objet###">
+                        <input type="hidden" value="validation" name="action"/>
+                        <input type="hidden" value="contact_ensavoirplus" name="formname"/>
+                        <input type="hidden" name="zone" value="###Zone###"/>
+                        <input type="hidden" name="whatId" value=""/>
+                    </td></tr>
+                </table>
+                ###Maj_erreur###
+            </form>
+        </div>
+    </div>
+    <div id='contact_pdf'>
+        <h2>Recevez ce pack au format PDF</h2>
+        <div class="ajax-replace-content">
+            <form name="contact_pdf" method="post" action="###URL###" >
+                <table>
+                    <tr><td><label for="LastName" >Nom :</label> </td>
+                    <td><input name="LastName" type="text" value="###LastName###" class="required ###LastName_erreur_class###">###LastName_erreur###</td>
+                    </tr>
+        
+                    <tr><td><label for="FirstName" >Prénom :</label></td>
+                    <td><input name="FirstName" type="text" value="###FirstName###" class="required ###FirstName_erreur_class###">###FirstName_erreur###</td>
+                    </tr>
+                        
+                    <tr><td><label for="Email" >Email :</label> </td>
+                    <td><input name="Email" type="text" value="###Email###" class="required ###Email_erreur_class###">###Email_erreur###</td>
+                    </tr>
+                        ###Message_erreur###
+                    <tr><td></td>
+        
+                    <td><input value="Envoyer" type="submit" />
+                        <input type="hidden" name="Objet" value="###Objet###">
+                        <input type="hidden" value="validation" name="action"/>
+                        <input type="hidden" value="contact_pdf" name="formname"/>
+                        <input type="hidden" name="zone" value="###Zone###"/>
+                        <input type="hidden" name="whatId" value="###whatId###"/>
+                    </td></tr>
+                </table>
+                ###Maj_erreur###
+            </form>
+        </div>
+    </div>
+    <div id='contact_revendeur'>
+        <h2>Trouvez votre revendeur</h2>
+        <div class="ajax-replace-content">
+            <form name="contact_revendeur" method="post" action="###URL###" >
+                <table>
+                    <tr><td><label for="LastName" >Nom :</label> </td>
+                    <td><input name="LastName" type="text" value="###LastName###" class="required ###LastName_erreur_class###">###LastName_erreur###</td>
+                    </tr>
+        
+                    <tr><td><label for="FirstName" >Prénom :</label></td>
+                    <td><input name="FirstName" type="text" value="###FirstName###" class="required ###FirstName_erreur_class###">###FirstName_erreur###</td>
+                    </tr>
+                    
+                    <tr><td><label for="Ville" >Ville de résidence :</label> </td>
+                    <td><input name="Ville" type="text" value="###Ville###" class="required ###Ville_erreur_class###">###Ville_erreur###</td>
+                    </tr>
+    
+                    <tr><td><label for="Port" >Port d'attache :</label></td>
+                    <td><input name="Port" type="text" value="###Port###" class="required ###Port_erreur_class###">###Port_erreur###</td>
+                    </tr>
+    
+                    <tr><td><label for="Email" >Email :</label> </td>
+                    <td><input name="Email" type="text" value="###Email###" class="required ###Email_erreur_class###">###Email_erreur###</td>
+                    </tr>
+                        ###Message_erreur###
+                    <tr><td></td>
+    
+                    <td><input value="Envoyer" type="submit">
+                        <input type="hidden" name="Objet" value="###Objet###">
+                        <input type="hidden" value="validation" name="action" />
+                        <input type="hidden" value="contact_revendeur" name="formname" />
+                        <input type="hidden" name="zone" value="###Zone###"/>
+                        <input type="hidden" name="whatId" value="###whatId###"/>
+                    </td></tr>
+                </table>
+                ###Maj_erreur###
+            </form>
+        </div>
+    </div>
+</div>
+<!-- ###TEMPLATE### -->
