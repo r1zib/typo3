@@ -1,0 +1,20 @@
+<T3DataStructure>
+	<meta type="array">
+		<langChildren>0</langChildren>
+	        <langDisable>1</langDisable>
+	</meta>
+	<ROOT>
+		<type>array</type>
+		<el>
+			<PackCode>
+					<TCEforms>
+					<label>Code pack :</label>
+						<config>
+							<type>select</type>
+							<itemsProcFunc>tx_azelizsalesforce_dynform->getPacks</itemsProcFunc>
+						</config>
+					</TCEforms>
+			</PackCode>
+		</el>
+	</ROOT>
+</T3DataStructure>

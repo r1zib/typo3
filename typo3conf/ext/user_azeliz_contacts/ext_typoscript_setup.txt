@@ -1,6 +1,7 @@
 plugin.user_azelizcontacts_pi1 {
     #Template File
-    templateFormulaires = EXT:user_azeliz_contacts/pi1/static/formulaires.html
+    # cat=plugin; type=string; label= Contact :Template pour personnaliser l'affichage des formulaires
+    templateFormulaires = fileadmin/templates/sophar/extensions/azeliz_contacts/formulaires.html
     templateJS = EXT:user_azeliz_contacts/pi1/static/load-click-ajax.js
     templateMessage = EXT:user_azeliz_contacts/pi1/static/message.html
 }

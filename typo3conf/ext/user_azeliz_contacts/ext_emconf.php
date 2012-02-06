@@ -3,7 +3,7 @@
 ########################################################################
 # Extension Manager/Repository config file for ext "user_azeliz_contacts".
 #
-# Auto generated 30-01-2012 16:55
+# Auto generated 31-01-2012 10:49
 #
 # Manual updates:
 # Only the data in the array - everything else is removed by next

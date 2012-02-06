@@ -1,0 +1,4 @@
+plugin.user_azelizsalesforcepacks_pi1 {
+    #Template File
+    templateFile = EXT:user_azelizsalesforce_packs/pi1/static/template.html
+}

@@ -28,6 +28,9 @@
  */
 
 require_once(PATH_tslib.'class.tslib_pibase.php');
+require_once __dir__.'/../lib/ContactSalesforce.php';
+require_once __dir__.'/../lib/Contact.php';
+require_once __dir__.'/../lib/AddCreatesend.php';
 
 /**
  * Plugin 'Contacts Azeliz' for the 'user_azeliz_contacts' extension.
@@ -49,7 +52,8 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
     private $serviceSF = array('user' => 'contact@nke-marine-electronics.fr',
                                 'pass' => 'wxcvbn,123',
                                 'token' => 'GNyIcUu0XzoRaXjOlN3HEJTK');
-    
+
+   private $log; // log dans le fichier /fileadmin/logs/contact.log
     /**
     * Constructeur de la classe faisant appel au constructeur parent
     */
@@ -58,8 +62,12 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
         require_once 'Zend/Loader/Autoloader.php';
         $autoloader = Zend_Loader_Autoloader::getInstance();
         $autoloader->registerNamespace('Azeliz_');
-        require_once __dir__.'/../lib/ContactSalesforce.php';
-        require_once __dir__.'/../lib/Contact.php';
+
+		$redacteur = new Zend_Log_Writer_Stream(getcwd().'/fileadmin/logs/contact.log');
+	        $this->log = new Zend_Log($redacteur);
+		if (!class_exists('SpreadSheetModel')) {
+		    require_once(t3lib_extMgm::extPath('user_feedback') . 'lib/class.user_feedback_spreadsheetmodel.php');
+		}
     }
     
     /**
@@ -74,23 +82,29 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
         $this->pi_setPiVarDefaults();
         $this->pi_loadLL();
         $this->pi_USER_INT_obj = 1;
-        
+        $this->log->debug('Formulaire : $_POST[formname] ' .$_POST['formname']);
         if (isset($_POST['formname'])) {
             $this->getPostRequest();
-            
+             $this->log->debug('Formulaire : Nombre d\'erreurs : ' .count($this->formError) );
             if (count($this->formError) == 0) {
                 // Envoi des données vers les services
                 $content = '<div id="'.$this->formValue['formname'].'"><div class="ajax-replace-content">';
                 $contact = $this->createContact();
-                if ($this->send($contact)) {
+                if ($this->sendGoogledoc($contact) &&
+                    $this->sendCreateSend($contact)) {
+                     $this->log->debug('Formulaire : Send GoogleDoc/CreateSend c\'est bien passé ');
                     $content .= '<p>Votre demande est bien envoyée !</p>';
                 } else {
+                    $this->log->debug('Formulaire : Send GoogleDoc KO ');
+
                     $content .= "<p>Une erreur s'est produite lors de l'envoi du message :<br />".
                                 $this->criticalError."</p>";
                 }
                 $content .= '</div><div>';
                 
             } else {
+	       $this->log->debug('Formulaire : Erreurs ' .Zend_Json::encode($this->formError));
+
                 $content = $this->initForms();
                 $content .= $this->initJS();
             }
@@ -116,9 +130,10 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
         if (isset($_POST['FirstName']) && (trim($_POST['FirstName']) == '') )
             $this->add_erreur('FirstName', 'Veuillez renseigner votre prénom');
         $this->formValue['FirstName'] = $_POST['FirstName'];
-        
+        /*
         if (isset($_POST['Telephone']) && (trim($_POST['Telephone']) == '') )
             $this->add_erreur('Telephone', 'Veuillez renseigner votre numéro de téléphone');
+        */
         $this->formValue['Telephone'] = $_POST['Telephone'];
         
         if (isset($_POST['Email']) && (filter_var($_POST['Email'], FILTER_VALIDATE_EMAIL) == false))
@@ -272,7 +287,7 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
         return $contact;
     }
     
-    private function send($contact) {
+    private function sendSalesforce($contact) {
         $redacteur = new Zend_Log_Writer_Stream(getcwd().'/fileadmin/logs/contact.log');
         $log = new Zend_Log($redacteur);
         $log->info($contact->__toString());
@@ -296,6 +311,69 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
         
         return true;
     }
+
+    private function sendGoogledoc($contact) {
+       try {
+		$this->log->info($contact->__toString());
+		
+		$ssModel = new SpreadSheetModel('marcantoine.trehin@azeliz.com', 'tev7g862');
+	      	$this->log->debug('new SpreadSheetModel ' );
+
+		$newLine = array(
+		        'timestamp' => date("d/m/Y")." ".date("H:i"),
+		        'url' => $this->getCurrentURL(),
+			'nom' =>$contact->getLastName(),
+		        'prenom' =>$contact->getFirstName(),
+		        'email' => $contact->getEmail(),
+			'formulaire' =>$this->getFieldValue('formname'),
+		        'tel' => $contact->getPhone(),
+		        'sujet' => $contact->getSujet()
+	       	);
+	      	$ret = $ssModel->insertRow($newLine, 'od6', 'tGzzJvn0FdPHR18hOBWUdUg');
+	      	$this->log->debug(Zend_Json::encode($newLine));
+	      	$this->log->debug('test ');
+	      	$content = null;
+       } catch (Exception $e) {
+       		$this->log->err($e->getMessage());
+	 	return false;
+	}
+        return true;
+    }
+    private function sendCreateSend(Contact $contact) {
+    	try {
+    		$listID = '';
+    		$apiKey = 'f48be37814dcd065f6a319011fcb6c02';
+    		switch ($this->getFieldValue('formname')) {
+    			case "contact_pdf": $listID = 'deea7de245997711a8adf0ab7f91cb2a'; break;
+    			default: $listID = '8b2520798e41d464c0f52872142aac69'; break;
+    		}
+    		
+    		if ($listID == '') return true;
+    		
+    		$create = new AddCreatesend($listID,$apiKey);
+    		$newLine = array(
+    			'name' => $contact->getLastName(). ' ' .$contact->getFirstName(), 
+   		        'email' => $contact->getEmail(),
+   		        'sujet' => $contact->getSujet()
+    		);
+    		$ret = $create->sendToCreateSend($newLine);
+    		$this->log->debug('CreateSend :' . Zend_Json::encode($newLine) .' --> '.$ret );
+    		$content = null;
+    		if (!$ret) {
+    			$this->log->err('CreateSend :'.$ret);
+    		}
+    		/* On va renvoyer vrai même s'il y a eu des erreurs 
+    		 * cas d'un email déjà dans la liste ...
+    		 */ 
+    		return true;
+    	} catch (Exception $e) {
+    		$this->log->err('CreateSend :'.$e->getMessage());
+    		return false;
+    	}
+    	return true;
+    }
+    
+
     
     private function getCurrentURL() {
          $pageURL = 'http';

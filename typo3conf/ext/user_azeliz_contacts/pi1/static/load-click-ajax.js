@@ -1,6 +1,20 @@
 ###TEMPLATE###
 <script type="text/javascript">
 $(document).ready(function () {
+                $( ".contact").each(function() { 
+			/* Templavoila modifie les liens et fait planter colorbox
+                         * On a : a href ="notre_pahe.html#contact
+			 * Et on attend a href ="#tabs-1 
+			 */
+ 			
+			var url = $(this).attr('href');
+		        // on ne garde que l'ancre 
+		        url = url.substring(url.indexOf('#'));
+			$(this).attr('href',url);
+		});
+
+
+
     $('.contact').colorbox({inline:true,
 			   onComplete:function(){openContact();}
 			   });
@@ -20,7 +34,9 @@ function openContact () {
 
 $('.contact').click(function () {
     var formName = $(this).attr('href'); // ex: #contact_default, #contact_panier, #contact_revendeur ...
-    
+    // on ne garde que l'ancre 
+    formName = formName.substring(formName.indexOf('#'));
+alert(formName);
     switch(formName) {
         case "#contact_panier" :
             var zone = $(this).attr('name');
