@@ -1,4 +1,7 @@
 plugin.user_listingpacks_pi1 {
     #Template File
     templateFile = EXT:user_listing_packs/pi1/static/template.html
+    templateBxSlider = EXT:user_listing_packs/pi1/static/bxSlider.html
+    
+    
 }
