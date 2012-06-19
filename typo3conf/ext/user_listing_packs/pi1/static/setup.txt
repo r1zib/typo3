@@ -1,0 +1,10 @@
+
+
+#page.headerData.1001.2 = TEXT
+#page.headerData.1001.2.value =  <script type="text/javascript" src="/typo3conf/ext/user_listing_packs/pi1/static/js/jquery.bxSlider.min.js"></script>
+
+#page.headerData.1001.2 = TEXT
+#page.headerData.1001.2.value =  <script type="text/javascript" src="/typo3conf/ext/user_listing_packs/pi1/static/js/jquery.bxSlider.min.js"></script>
+
+page.includeCSS.listing  = EXT:user_listing_packs/pi1/static/css/bx.css
+page.includeCSS.listing2 = EXT:user_listing_packs/pi1/static/css/neutral_light/skin.min.css

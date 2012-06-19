@@ -1,0 +1,37 @@
+
+.bx-wrapper{
+	position:relative;
+} 
+
+.slider {
+	padding: 0 30px;
+
+}
+
+.bx-prev {
+	position: absolute;
+	top: 78px;
+	left: 0px;
+	width: 31px;
+	height: 31px;
+	text-indent: -999999px;
+	background: url(icon_arrow_left.png) no-repeat 0 -31px;
+}
+
+.bx-next {
+	position: absolute;
+	top: 78px;
+	right: 0px;
+	width: 31px;
+	height: 31px;
+	text-indent: -999999px;
+	background: url(icon_arrow_right.png) no-repeat 0 -31px;
+}
+
+.bx-next:hover,
+.bx-prev:hover {
+	background-position: 0 0;
+}
+
+
+

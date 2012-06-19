@@ -1,0 +1,66 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+    <head>
+	
+	<title>Ken Burns slider - Example 1 - A jQuery Plugin by pixelentity</title>
+	
+	<!--<link rel="stylesheet" href="css/examples.css" />-->
+	<link rel="stylesheet" href="../pi1/static/css/skin.min.css" />
+	
+	<!-- import jQuery -->
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+	
+	<!-- import plugin -->
+	<script type="text/javascript" src="../pi1/static/js/jquery.pixelentity.kenburnsSlider.min.js"></script>
+	
+	<!-- set slider size -->
+	<style>
+		.peKenBurns {
+			width: 920px;
+			height: 200px;
+		}
+	</style>
+	
+	<!-- activate plugin -->
+	<script>
+		jQuery(function($){
+			$(".peKenBurns").peKenburnsSlider()
+		})
+	</script>
+    
+    </head>
+    
+    <body>
+    	<div class="peKenBurns" >
+<div data-delay="5">
+        <a href="packs/gyropilot.html">
+			<img src="http://typo3.local/fileadmin/produits/images/templavoila2.png" width="881" height="524" border="0" alt="rer" title="rer" />
+</a>        
+    <h1 class="h2liste">rer</h1>
+        
+
+</div>
+			<div data-delay="5">
+				<a class="" href="http://vimeo.com/7809605"><img src="img/kb_01.jpg" alt="Banner Image 1" /></a>
+				<h1>FUNKY IMAGE CAPTION TRANSITION 01</h1>
+			</div>
+			
+			<div data-delay="5">
+				<a class="video hd autoplay loop skiptonext" href="http://www.youtube.com/watch?v=lZOnrN4x0Zk"><img src="img/blank.png" data-src="img/kb_02.jpg" alt="Banner Image 1" /></a>
+				<h1>SLIGHTLY LONGER IMAGE CAPTION POSITION BOTTOM &amp; CENTERED</h1>
+			</div>
+			
+			<div data-delay="5" data-thumb="img/thumbs/kb_03.jpg">
+				<img src="img/blank.png" data-src="img/kb_03.jpg" alt="Banner Image 1" />
+				<h1>FUNKY IMAGE CAPTION TRANSITION 03</h1>
+			</div>
+			
+			<div data-delay="5" data-thumb="img/thumbs/kb_04.jpg">
+				<img src="img/blank.png" data-src="img/kb_04.jpg" alt="Banner Image 1" />
+				<h1>FUNKY IMAGE CAPTION TRANSITION 04</h1>
+			</div>		    
+		</div>
+    </body>
+	
+</html>
