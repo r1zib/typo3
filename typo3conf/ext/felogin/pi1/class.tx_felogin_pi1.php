@@ -32,6 +32,10 @@
  * @package	TYPO3
  * @subpackage	tx_felogin
  */
+require_once("Zend/Loader/Autoloader.php");
+Zend_Loader_Autoloader::getInstance();
+
+
 class tx_felogin_pi1 extends tslib_pibase {
 	var $prefixId      = 'tx_felogin_pi1';		// Same as class name
 	var $scriptRelPath = 'pi1/class.tx_felogin_pi1.php';	// Path to this script relative to the extension dir.
@@ -55,8 +59,7 @@ class tx_felogin_pi1 extends tslib_pibase {
 	 * @return	string		The	content that is displayed on the website
 	 */
 	public function main($content,$conf)	{
-
-			// Loading TypoScript array into object variable:
+		// Loading TypoScript array into object variable:
 		$this->conf = $conf;
 		$this->uploadDir = 'uploads/tx_felogin/';
 
@@ -103,14 +106,19 @@ class tx_felogin_pi1 extends tslib_pibase {
 			// Is user logged in?
 		$this->userIsLoggedIn = $GLOBALS['TSFE']->loginUser;
 
+		
 			// Redirect
 		if ($this->conf['redirectMode'] && !$this->conf['redirectDisable'] && !$this->noRedirect) {
+			
 			$redirectUrl = $this->processRedirect();
 			if (count($redirectUrl)) {
-				$this->redirectUrl = $this->conf['redirectFirstMethod'] ? array_shift($redirectUrl) : array_pop($redirectUrl);
+				//$this->redirectUrl = $this->conf['redirectFirstMethod'] ? array_shift($redirectUrl) : array_pop($redirectUrl);
+				$this->redirectUrl = $redirectUrl[0];
+				
 			} else {
 				$this->redirectUrl = '';
 			}
+			$tmpredirectUrl = $this->redirectUrl;
 		}
 
 			// What to display
@@ -126,8 +134,9 @@ class tx_felogin_pi1 extends tslib_pibase {
 				$content .= $this->showLogin();
 			}
 		}
-
-			// Process the redirect
+		
+		$this->redirectUrl = $tmpredirectUrl;
+		// Process the redirect
 		if (($this->logintype === 'login' || $this->logintype === 'logout') && $this->redirectUrl && !$this->noRedirect) {
 			if (!$GLOBALS['TSFE']->fe_user->cookieId) {
 				$content .= $this->cObj->stdWrap($this->pi_getLL('cookie_warning', '', 1), $this->conf['cookieWarning_stdWrap.']);
@@ -452,7 +461,9 @@ class tx_felogin_pi1 extends tslib_pibase {
 				}
 				// show logout form directly
 				if ($this->conf['showLogoutFormAfterLogin']) {
-					$this->redirectUrl = '';
+					// BOf Erwand  9/02/12
+					//$this->redirectUrl = '';
+					// EOf Erwand  9/02/12
 					return $this->showLogout();
 				}
 			} else {
@@ -595,6 +606,7 @@ class tx_felogin_pi1 extends tslib_pibase {
 							);
 							if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_row($res))	{
 								$redirect_url[] = $this->pi_getPageLink($row[0]); // take the first group with a redirect page
+								Zend_Debug::dump($row);
 							}
 						break;
 						case 'userLogin':

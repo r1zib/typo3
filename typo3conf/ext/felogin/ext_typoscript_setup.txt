@@ -89,7 +89,7 @@ plugin.tx_felogin_pi1 {
 	}
 	
 		#redirect
-	redirectMode =
+	redirectMode = groupLogin
 	redirectFirstMethod = 
 	redirectPageLogin =
 	redirectPageLoginError =

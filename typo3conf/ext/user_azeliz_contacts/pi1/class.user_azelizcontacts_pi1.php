@@ -28,9 +28,6 @@
  */
 
 require_once(PATH_tslib.'class.tslib_pibase.php');
-require_once __dir__.'/../lib/ContactSalesforce.php';
-require_once __dir__.'/../lib/Contact.php';
-require_once __dir__.'/../lib/AddCreatesend.php';
 
 /**
  * Plugin 'Contacts Azeliz' for the 'user_azeliz_contacts' extension.
@@ -49,11 +46,16 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
     private $formError = array(); // Tableau des champs formulaire nom valide avec message d'erreur
     private $formValue = array(); // Tableau des champs formulaire avec les valeurs utilisateurs
     private $criticalError; // Tableau des erreurs critiques du programme
-    private $serviceSF = array('user' => 'contact@nke-marine-electronics.fr',
-                                'pass' => 'wxcvbn,123',
-                                'token' => 'GNyIcUu0XzoRaXjOlN3HEJTK');
+    private $sendContact;
 
-   private $log; // log dans le fichier /fileadmin/logs/contact.log
+    private $log; // log dans le fichier /fileadmin/logs/contact.log
+    
+    /* information du flexform */
+    var $PIValues = array();
+    
+    var $upload = 'uploads/user_azeliz_contacts/';
+    
+    
     /**
     * Constructeur de la classe faisant appel au constructeur parent
     */
@@ -61,13 +63,8 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
         parent::__construct();
         require_once 'Zend/Loader/Autoloader.php';
         $autoloader = Zend_Loader_Autoloader::getInstance();
-        $autoloader->registerNamespace('Azeliz_');
-
-		$redacteur = new Zend_Log_Writer_Stream(getcwd().'/fileadmin/logs/contact.log');
-	        $this->log = new Zend_Log($redacteur);
-		if (!class_exists('SpreadSheetModel')) {
-		    require_once(t3lib_extMgm::extPath('user_feedback') . 'lib/class.user_feedback_spreadsheetmodel.php');
-		}
+        $autoloader->registerNamespace('Az_');
+       	$this->initLog();
     }
     
     /**
@@ -80,42 +77,78 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
     function main($content, $conf) {
         $this->conf = $conf;
         $this->pi_setPiVarDefaults();
+        // Loading language-labels
         $this->pi_loadLL();
+
+        // Récupération de la config backend du plugin
+	$this->PIValues = $this->getPIValues();
+        
         $this->pi_USER_INT_obj = 1;
-        $this->log->debug('Formulaire : $_POST[formname] ' .$_POST['formname']);
+        
+        /* permet d'avoir les méthodes pour faciliter les transfert */
+        $this->fileFunc = t3lib_div::makeInstance('t3lib_basicFileFunctions');
+
         if (isset($_POST['formname'])) {
+            $this->log->debug('Requete : '.Zend_Json::encode($_POST));
             $this->getPostRequest();
-             $this->log->debug('Formulaire : Nombre d\'erreurs : ' .count($this->formError) );
+            
+            /* un validation en ajax de contact_default_cv impossible */
+            //if ($_POST['formname'] == 'contact_default_cv' && 
+            //    ! isset($this->PIValues['form'])) return '';
+            
+            /* permet le téléchargement de fichier */
+            if (count($this->formError) == 0 && isset($this->PIValues['form']) ) {
+                $erreur = $this->download();
+                $this->log->debug('Document  : Erreurs ' .Zend_Json::encode($erreur));
+                if ($erreur !== true) {
+                    $this->add_erreur('cv', $erreur);
+                    Zend_Debug::dump('add_erreur');
+                }        
+            } 
+            
             if (count($this->formError) == 0) {
+                
+                
                 // Envoi des données vers les services
                 $content = '<div id="'.$this->formValue['formname'].'"><div class="ajax-replace-content">';
-                $contact = $this->createContact();
-                if ($this->sendGoogledoc($contact) &&
-                    $this->sendCreateSend($contact)) {
-                     $this->log->debug('Formulaire : Send GoogleDoc/CreateSend c\'est bien passé ');
-                    $content .= '<p>Votre demande est bien envoyée !</p>';
+                $erreur = false;
+                
+                $sendContact = new Az_SendContact($conf['config'],$this->formValue);
+                Zend_Debug::dump($this->formValue);
+                #$ret = $sendContact->sendRapide();
+                $ret = $sendContact->send();
+                                
+                if (!$ret) {
+                	if ($sendContact->getError() == Az_SendContact::KO_SPAM) {
+                		$content .= "<p>".$this->pi_getLL('ko_spam')."</p>";
+                	} else {
+                		$content .= "<p>".$this->pi_getLL('ko_maj')."</p>";
+                	}
+                	
+                	
+                	$this->log->debug('Formulaire : Erreurs ' .$ret);
                 } else {
-                    $this->log->debug('Formulaire : Send GoogleDoc KO ');
-
-                    $content .= "<p>Une erreur s'est produite lors de l'envoi du message :<br />".
-                                $this->criticalError."</p>";
+                	$content .= $this->successMessage();
                 }
+                
                 $content .= '</div><div>';
                 
             } else {
-	       $this->log->debug('Formulaire : Erreurs ' .Zend_Json::encode($this->formError));
-
+	    	$this->log->debug('Formulaire : Erreurs ' .Zend_Json::encode($this->formError));
                 $content = $this->initForms();
                 $content .= $this->initJS();
             }
             
         } else {
-
             $content = $this->initForms();
             $content .= $this->initJS();
         }
         
         return $this->pi_wrapInBaseClass($content);
+    }
+    
+    function traceMaj ($dest, $ret , $msg ) {
+    	$this->sendContact->traceDest($dest, $ret, $msg);
     }
     
     
@@ -124,11 +157,11 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
         $this->formValue['zone'] = $_POST['zone'];
         
         if (isset($_POST['LastName']) && (trim($_POST['LastName']) == '') )
-            $this->add_erreur('LastName', 'Veuillez renseigner votre nom');
+            $this->add_erreur('LastName', $this->pi_getLL ('oblig_lastname'));
         $this->formValue['LastName'] = $_POST['LastName'];
-        
+          
         if (isset($_POST['FirstName']) && (trim($_POST['FirstName']) == '') )
-            $this->add_erreur('FirstName', 'Veuillez renseigner votre prénom');
+            $this->add_erreur('FirstName', $this->pi_getLL ('oblig_firstname'));
         $this->formValue['FirstName'] = $_POST['FirstName'];
         /*
         if (isset($_POST['Telephone']) && (trim($_POST['Telephone']) == '') )
@@ -137,23 +170,23 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
         $this->formValue['Telephone'] = $_POST['Telephone'];
         
         if (isset($_POST['Email']) && (filter_var($_POST['Email'], FILTER_VALIDATE_EMAIL) == false))
-            $this->add_erreur('Email', 'Votre e-mail est incorrect');
+            $this->add_erreur('Email', $this->pi_getLL ('pb_email'));
         $this->formValue['Email'] = $_POST['Email'];
         
         if (isset($_POST['Objet']) && (trim($_POST['Objet']) == '') )
-            $this->add_erreur('Objet', 'Veuillez renseigner l\'objet du message');
+            $this->add_erreur('Objet', $this->pi_getLL ('oblig_object'));
         $this->formValue['Objet'] = $_POST['Objet'];
         
         if (isset($_POST['Message']) && (trim($_POST['Message']) == '') )
-            $this->add_erreur('Message', 'Veuillez renseigner le corp du message');
+            $this->add_erreur('Message', $this->pi_getLL ('oblig_message'));
         $this->formValue['Message'] = $_POST['Message'];
         
         if (isset($_POST['Ville']) && (trim($_POST['Ville']) == '') )
-            $this->add_erreur('Ville', 'Veuillez renseigner votre ville');
+            $this->add_erreur('Ville', $this->pi_getLL ('oblig_town'));
         $this->formValue['Ville'] = $_POST['Ville'];
         
         if (isset($_POST['Port']) && (trim($_POST['Port']) == '') )
-            $this->add_erreur('Port', 'Veuillez renseigner votre port d\'attache');
+            $this->add_erreur('Port', $this->pi_getLL ('oblig_port'));
         $this->formValue['Port'] = $_POST['Port'];
         /*
         if (isset($_POST['ChantierNaval']) && (trim($_POST['ChantierNaval']) == '') )
@@ -170,26 +203,38 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
         $this->markerArray['###URL###'] = $_SERVER["REQUEST_URI"];
         $this->markerArray['###Zone###'] = $this->getFieldValue('zone');
         
+        $this->markerArray['###TITLE_CONTACT###'] = $this->pi_getLL ('title_contact');
+        $this->markerArray['###TITLE_CONTACT_CART###'] = $this->pi_getLL ('title_contact_cart');
+        $this->markerArray['###TITLE_CONTACT_ENSAVOIRPLUS###'] = $this->pi_getLL ('title_contact_ensavoirplus');
+        $this->markerArray['###TITLE_CONTACT_PDF###'] = $this->pi_getLL ('title_contact_pdf');
+        $this->markerArray['###TITLE_CONTACT_AUTRE###'] = $this->pi_getLL ('title_contact_autre');
+        
+        $this->markerArray['###LABEL_LASTNAME###'] = $this->pi_getLL ('label_lastname');
         $this->markerArray['###LastName###'] = $this->getFieldValue('LastName');
         $this->markerArray['###LastName_erreur_class###'] = $this->class_erreur('LastName');
         $this->markerArray['###LastName_erreur###'] = $this->msg_erreur('LastName');
-
+        
+        $this->markerArray['###LABEL_FIRSTNAME###'] = $this->pi_getLL ('label_firstname');
         $this->markerArray['###FirstName###'] = $this->getFieldValue('FirstName');
         $this->markerArray['###FirstName_erreur_class###'] = $this->class_erreur('FirstName');
         $this->markerArray['###FirstName_erreur###'] = $this->msg_erreur('FirstName');
 
+        $this->markerArray['###LABEL_PHONE###'] = $this->pi_getLL ('label_phone');
         $this->markerArray['###Telephone###'] = $this->getFieldValue('Telephone');
         $this->markerArray['###Telephone_erreur_class###'] = $this->class_erreur('Telephone');
         $this->markerArray['###Telephone_erreur###'] = $this->msg_erreur('Telephone');
 
+        $this->markerArray['###LABEL_EMAIL###'] = $this->pi_getLL ('label_email');
         $this->markerArray['###Email###'] = $this->getFieldValue('Email');
         $this->markerArray['###Email_erreur_class###'] = $this->class_erreur('Email');
         $this->markerArray['###Email_erreur###'] = $this->msg_erreur('Email');
 
+        $this->markerArray['###LABEL_OBJECT###'] = $this->pi_getLL ('label_object');
         $this->markerArray['###Objet###'] = $this->getFieldValue('Objet');
         $this->markerArray['###Objet_erreur_class###'] = $this->class_erreur('Objet');
         $this->markerArray['###Objet_erreur###'] = $this->msg_erreur('Objet');
 
+        $this->markerArray['###LABEL_MESSAGE###'] = $this->pi_getLL ('label_message');
         $this->markerArray['###Message###'] = $this->getFieldValue('Message');
         $this->markerArray['###Message_erreur_class###'] = $this->class_erreur('Message');
         $this->markerArray['###Message_erreur###'] = $this->msg_erreur('Message');
@@ -201,6 +246,12 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
         $this->markerArray['###Port###'] = $this->getFieldValue('Port');
         $this->markerArray['###Port_erreur_class###'] = $this->class_erreur('Port');
         $this->markerArray['###Port_erreur###'] = $this->msg_erreur('Port');
+        
+        $this->markerArray['###LABEL_CV###'] = $this->pi_getLL ('label_cv');;
+        $this->markerArray['###cv_erreur_class###'] = $this->class_erreur('cv');
+        $this->markerArray['###cv_erreur###'] = $this->msg_erreur('cv');
+        
+        
 	/*
         $this->markerArray['###ChantierNaval###'] = $this->getFieldValue('ChantierNaval');
         $this->markerArray['###ChantierNaval_erreur_class###'] = $this->class_erreur('ChantierNaval');
@@ -210,11 +261,26 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
         $this->markerArray['###Erreur###'] = "";
 
         $this->markerArray['###whatId###'] = $this->getFieldValue('whatId');
-
-
-        $this->templateHtml = $this->cObj->fileResource($this->conf['templateFormulaires']);
-        $subpart = $this->cObj->getSubpart($this->templateHtml, '###TEMPLATE###');
-
+	
+        //Zend_Debug::dump($this->current_lang);
+	if ($GLOBALS['TSFE']->sys_language_uid == 4) {
+            $this->templateHtml = $this->cObj->fileResource($this->conf['formulairesENTPL']);
+       	} else {
+            $this->templateHtml = $this->cObj->fileResource($this->conf['templateFormulaires']);
+        }
+        
+        
+        /* Parfois on peut vouloir le formulaire directement dans une page */
+        
+        $template = '###TEMPLATE###';
+        
+        if (isset($this->PIValues['form'])) {
+            switch ($this->PIValues['form']) {
+                case 'contact' : $template = '###CONTACT_DEFAULT###'; break;
+                case 'other' : $template = '###CONTACT_OTHER###'; break;
+            }
+        }
+        $subpart = $this->cObj->getSubpart($this->templateHtml, $template);
         return $this->cObj->substituteMarkerArrayCached($subpart, $this->markerArray);
     }
     
@@ -223,6 +289,7 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
     */
     private function initJS() {
         $this->markerArray['###URL###'] = $_SERVER["REQUEST_URI"];
+        $this->markerArray['###WAIT###'] =  $this->pi_getLL ('wait');
         
         $this->templateHtml = $this->cObj->fileResource($this->conf['templateJS']);
         $subpart = $this->cObj->getSubpart($this->templateHtml, '###TEMPLATE###');
@@ -286,92 +353,31 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
             
         return $contact;
     }
+    private function successMessage() {
+       
+        
+        
+        if ($this->getFieldValue("formname") == "contact_pdf_instru") {
+            return '<p><a href="" target="_blank">'.$this->pi_getLL('ok_maj_contact_pdf_instru').'</a></p>';
+        }
+	
+        return '<p>'.$this->pi_getLL('ok_maj').'</p>';
+        
+    }
     
-    private function sendSalesforce($contact) {
-        $redacteur = new Zend_Log_Writer_Stream(getcwd().'/fileadmin/logs/contact.log');
-        $log = new Zend_Log($redacteur);
-        $log->info($contact->__toString());
-        
-        $send = new ContactSalesforce($this->serviceSF['user'], $this->serviceSF['pass'],
-                                      $this->serviceSF['token'], __dir__.'/static/wsdl.xml');
-        $status = $send->connection();
-        
-        if ($status !== TRUE ) {
-            $this->criticalError = "-> Connexion error" ;
-            $log->log($status,Zend_Log::CRIT);
-            return false;
-        }
-        
-        $status = $send->update($contact);
-        if ($status !== TRUE ) {
-            $this->criticalError = "-> Content message error";
-            $log->log($status,Zend_Log::CRIT);
-            return false;
-        }
-        
-        return true;
+    /*  Permet de Tracer dans un répertoire les validations de formulaire
+     * 
+     */
+    private function initLog() {
+    	$redacteur = new Zend_Log_Writer_Stream(__DIR__.'/../../../../fileadmin/logs/contact.log');
+    	$this->log = new Zend_Log($redacteur);
     }
-
-    private function sendGoogledoc($contact) {
-       try {
-		$this->log->info($contact->__toString());
-		
-		$ssModel = new SpreadSheetModel('marcantoine.trehin@azeliz.com', 'tev7g862');
-	      	$this->log->debug('new SpreadSheetModel ' );
-
-		$newLine = array(
-		        'timestamp' => date("d/m/Y")." ".date("H:i"),
-		        'url' => $this->getCurrentURL(),
-			'nom' =>$contact->getLastName(),
-		        'prenom' =>$contact->getFirstName(),
-		        'email' => $contact->getEmail(),
-			'formulaire' =>$this->getFieldValue('formname'),
-		        'tel' => $contact->getPhone(),
-		        'sujet' => $contact->getSujet()
-	       	);
-	      	$ret = $ssModel->insertRow($newLine, 'od6', 'tGzzJvn0FdPHR18hOBWUdUg');
-	      	$this->log->debug(Zend_Json::encode($newLine));
-	      	$this->log->debug('test ');
-	      	$content = null;
-       } catch (Exception $e) {
-       		$this->log->err($e->getMessage());
-	 	return false;
-	}
-        return true;
-    }
-    private function sendCreateSend(Contact $contact) {
-    	try {
-    		$listID = '';
-    		$apiKey = 'f48be37814dcd065f6a319011fcb6c02';
-    		switch ($this->getFieldValue('formname')) {
-    			case "contact_pdf": $listID = 'deea7de245997711a8adf0ab7f91cb2a'; break;
-    			default: $listID = '8b2520798e41d464c0f52872142aac69'; break;
-    		}
-    		
-    		if ($listID == '') return true;
-    		
-    		$create = new AddCreatesend($listID,$apiKey);
-    		$newLine = array(
-    			'name' => $contact->getLastName(). ' ' .$contact->getFirstName(), 
-   		        'email' => $contact->getEmail(),
-   		        'sujet' => $contact->getSujet()
-    		);
-    		$ret = $create->sendToCreateSend($newLine);
-    		$this->log->debug('CreateSend :' . Zend_Json::encode($newLine) .' --> '.$ret );
-    		$content = null;
-    		if (!$ret) {
-    			$this->log->err('CreateSend :'.$ret);
-    		}
-    		/* On va renvoyer vrai même s'il y a eu des erreurs 
-    		 * cas d'un email déjà dans la liste ...
-    		 */ 
-    		return true;
-    	} catch (Exception $e) {
-    		$this->log->err('CreateSend :'.$e->getMessage());
-    		return false;
-    	}
-    	return true;
-    }
+    
+	 /* sendCreateSend : envoir des données dans googleDoc
+    * @param Contact
+    * return booblean/string  True-> le traitement c'est bien passé
+    */
+    
     
 
     
@@ -386,6 +392,101 @@ class user_azelizcontacts_pi1 extends tslib_pibase {
          }
          return $pageURL;
     }
+    
+    /*
+     * Téléchargement des CV
+     * @return boolean 
+     */
+    private function download() {
+        /**/
+        $erreur = '';
+        
+        if ($this->formValue['formname'] == 'contact_default_cv' && isset($_FILES['cv'])) {
+            /* Vérification que le fichier est bien téléchargé */
+            Zend_Debug::dump($_FILES['cv']);
+            if ($_FILES['cv']['error'] > 0) {
+                $erreur .= 'Erreur lors du tansfert/n';
+            }
+            /* Test sur les extensions */
+            $extensions_valides = array( 'txt', 'doc', 'docx', 'pdf', 'odt'  );
+            $extension_upload = strtolower(  substr(  strrchr($_FILES['cv']['name'], '.')  ,1)  );
+            $name_upload = strtolower(  substr(  strrchr($_FILES['cv']['name'], '.')  ,0)  );
+            
+            if ( ! in_array($extension_upload,$extensions_valides) ) {
+                $erreur .=  'Extension non correcte /n';
+            }
+            Zend_Debug::dump($extension_upload,"extension");
+            if ($_FILES['cv']['size'] > 500 * 1024) $erreur .= 'Le fichier est trop gros./n';
+
+            Zend_Debug::dump($_FILES['cv']['size'],'taille');
+            
+            if ($erreur == '') {
+                /* Recherche d'un nom 
+                 * Vérification si le nom existe
+                 */
+
+                $fichier_temp = $_FILES['cv']['tmp_name'];
+                $fichier = $this->fileFunc->cleanFileName(basename($_FILES['cv']['name']));
+                $chemin = PATH_site.$this->upload;
+                if (!is_dir($chemin)) {
+                    $erreur .=  'Répertoire n\'existe pas /n';
+                }
+
+                $file_path = $this->fileFunc->getUniqueName($fichier, $chemin);
+                if (t3lib_div::upload_copy_move($fichier_temp, $file_path)) {
+                    // si l'upload est completement réussi
+                    $file = str_replace(PATH_site,$_SERVER["SERVER_NAME"].'/' ,$file_path );
+                    
+                    $this->formValue['cv'] = $file;
+                    Zend_Debug::dump($this->formValue['cv']);
+                } else {
+                    $erreur .=  'Problème dans le téléchargement du fichier./n';
+                }                   
+            }
+            
+            
+        }
+        if ($erreur == '') {
+            return true;
+        } else {
+            return $erreur;
+        }
+    }
+/**
+	* Retourne un tableau contenant la configuration flexform du plugin coté Backend.
+	* Le tableau organise les éléments sous la forme "key" => "value"
+	* @param String $xml_flexform : information de la base flexform
+	*        Si null alors on retourne le flexform du plugin
+	* @return array $lConf
+	*/
+	private function getPIValues($xml_flexform = null) {
+		if ($xml_flexform != null) {
+			$piFlexForm = t3lib_div::xml2array($xml_flexform);
+		} else {
+			$this->pi_initPIflexform();
+			$piFlexForm = $this->cObj->data['pi_flexform'];
+			//Zend_Debug::dump($piFlexForm);
+		}
+	
+		$lConf = array(); // Setup our storage array...
+		 
+		foreach ($piFlexForm['data'] as $sheet => $data) {
+			foreach ($data as $lang => $value) {
+				foreach ($value as $key => $val) {
+					if ( is_array($val) ) {
+						// SI VRAI
+						if ( array_key_exists("_TRANSFORM_vDEF.vDEFbase", $val) )
+						$lConf[$key] = $val["_TRANSFORM_vDEF.vDEFbase"]; // Gère les balises p
+						else
+						$lConf[$key] = $val["vDEF"]; // Ne gère pas les balises p
+					} else {
+						$lConf[$key] = $this->pi_getFFvalue($piFlexForm, $key, $sheet);
+					}
+				}
+			}
+		}
+		return $lConf;
+	}    
 }
 
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/user_azeliz_contacts/pi1/class.user_azelizcontacts_pi1.php'])    {

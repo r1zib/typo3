@@ -33,7 +33,7 @@ require_once("Zend/Loader/Autoloader.php");
 Zend_Loader_Autoloader::getInstance();
 
 /**
- * Plugin 'nke packs list' for the 'user_listing_packs' extension.
+ * Plugin 'nke liste des pages' for the 'user_listing_packs' extension.
  *
  * @author    Marc-Antoine TREHIN <marcantoine.trehin@gmail.com>
  * @package    TYPO3
@@ -45,17 +45,13 @@ class user_listingpacks_pi1 extends tslib_pibase {
     var $extKey        = 'user_listing_packs';    // The extension key.
     var $pi_checkCHash = true;
     
-    var $baseURL = "http://apps.nke-marine-electronics.fr/typo3/";
+    const BASE_URL = "http://apps.nke-marine-electronics.fr/typo3/";
+    
+    var $PIValues = array();
     var $packs = array();
-    var $options = array();
     
+    var $infoPage = array();
     
-    const SEL_SSPAGE = 0;
-    const SEL_PACK = 1;
-    
-    const AFF_LISTE = 0;
-    const AFF_SLIDER_BXSLIDER = 1;
-    const AFF_SLIDER_ESTRO = 2;
     
     /**
      * The main method of the PlugIn
@@ -68,105 +64,121 @@ class user_listingpacks_pi1 extends tslib_pibase {
         $this->pi_setPiVarDefaults();
         $this->pi_loadLL();
         
-        $this->options = $this->getOptions();
-
-        /*
-         *  Recherche des pages à afficher
-         */
+        // Récupération de la config backend du plugin
+        $this->PIValues = $this->getPIValues();
+        //$this->options = $this->getOptions();
         
-        if ($this->options['selOption'] == $this::SEL_PACK) {
-        	/* liste du plugin*/
-        	$UIDs = $this->getPacks();
+        // Récupération des choix de pack à afficher
+        if ($this->PIValues['selectType'] == "select-pack") {
+            $pageUIDs = explode(',', $this->PIValues["selectPacks"]);
+            $this->infoPage = array();
+            foreach($pageUIDs as $pageUID) {
+            	$page = array('uid' => $pageUID, 'link' => $pageUID);
+            	$this->infoPage[] = $page;
+            }   
+        // Récupération des packs des sous-pages
         } else {
-        	/* les sous-pages */
-        	$currentPageID = $this->cObj->data["pid"];
-        	$UIDs = $this->getUIDs($currentPageID);
+        	// mémorisation de la recherche dans $this->infoPage
+        	$this->getSubPageUIDs($this->cObj->data["pid"]);
         }
         
-        /*
-         * Pour chaque page, on recherche les informations à afficher
-         */
-        $lst = array();
-        foreach($UIDs as $uid) {
-        	/* recherche des autres informations */
-        	$elt = $this->getinfoContent($uid);
-        	$lst[] = $elt;
+        // On complete 	les informations sur la page avec le contenue
+        foreach($this->infoPage as &$page) {
+            $info = $this->getInfoContent($page['uid']);
+            $page = array_merge($page,$info);
         }
-
-        /*
-        * Choix du template et affichage dans le template
-        */
+        unset($page);
         
-        $template = '';
-        switch ($this->options['affOption']) {
-        	case $this::AFF_SLIDER_BXSLIDER: 
-        		$template = $conf['templateBxSlider'];         	
-        		break;
-        	case $this::AFF_SLIDER_ESTRO:
-        		$template = $conf['templateEstro'];
-        		break;
-        		
-        		
-        	case $this::AFF_LISTE:  
-        	default:
-        		$template = $conf['templateFile'];
-        	break;
-        }
+        // Récupération du template suivant le type d'affichage donnée dans la config backend du plugin
+        $this->templateHtml = $this->cObj->fileResource($this->getTemplatePath());
+        //Zend_Debug::dump($this->getTemplatePath());
         
-        /* Constitution des éléments li */
-        $eltLi = '';
-        $this->templateHtml = $this->cObj->fileResource($template);
+        // Création des balises <li>
         $subpart = $this->cObj->getSubpart($this->templateHtml, '###STRUCTURE-LI###');
+        $baliseLI = '';
         $markerArray = array();
         
-        foreach ($lst as $pack) {
-        	      	
-            $markerArray['###PACK_LINK###']   = $url = tslib_pibase::pi_getPageLink($pack["uid"]);
+        foreach ($this->infoPage as $pack) {
+        	if (isset($pack['link'])) {
+        		$url = $pack["link"];
+        	} else {
+        		$url = $pack["uid"];
+        	}
+        	
+            $markerArray['###PACK_LINK###']   = tslib_pibase::pi_getPageLink($url);
             $markerArray['###PACK_NAME###']   = $pack["Name"];
             $markerArray['###PACK_INTRO###']  = $pack["Intro"];
             
             /* image sur le serveur ou pas */
             if (strpos($pack["image2__c"],'fileadmin') === 0 ) {
-            	$urlImage = $pack["image2__c"];
-            	
+                $urlImage = $pack["image2__c"];
+                
             } else {
-
-            	$path_parts = pathinfo($pack["image2__c"]);
-            	$urlImage = "uploads/user_azelizsalesforce_packs/".$path_parts['basename'];
+                $path_parts = pathinfo($pack["image2__c"]);
+                $urlImage = "uploads/user_azelizsalesforce_packs/".$path_parts['basename'];
             }
             
-            
-            
-            $markerArray['###PACK_IMAGE###'] = $this->resize_img($urlImage,$pack["Name"], $pack["Name"], 235, 235,false);
+            $markerArray['###PACK_IMAGE###'] = $this->resize_img($urlImage,$pack["Name"], $pack["Name"], 300, 182,false);
             $markerArray['###IMAGE###'] = $this->resize_img($urlImage,$pack["Name"], $pack["Name"], 1000, 1000,false);
                     
-            $eltLi .= $this->cObj->substituteMarkerArrayCached($subpart, $markerArray);
+            $baliseLI .= $this->cObj->substituteMarkerArrayCached($subpart, $markerArray);
         }
 
-        /* ajout de ul */
-        $markerArray = array();
+        // Englobement des <li> dans une <ul>
         $subpart = $this->cObj->getSubpart($this->templateHtml, '###TEMPLATE###');
-        $markerArray['###ELEMENT_LI###'] = $eltLi;
-        
+        $markerArray = array();
+        $markerArray['###ELEMENT_LI###'] = $baliseLI;
+        $markerArray['###PluginUID###'] = $this->cObj->data["uid"];
         $content = $this->cObj->substituteMarkerArrayCached($subpart, $markerArray);
         
         /* On rajoute le jquery  si besoin */
         $subpart = $this->cObj->getSubpart($this->templateHtml, '###JQUERY###');
-        
-        $content .= $this->cObj->substituteMarkerArrayCached($subpart,array());;
-        
+        $markerArray = array();
+        $markerArray['###PluginUID###'] = $this->cObj->data["uid"];
+        $content .= $this->cObj->substituteMarkerArrayCached($subpart,$markerArray);
         return $this->pi_wrapInBaseClass($content);
     }
+    
+    
+    /**
+    * Retourn le chemin du template suivant le type d'affichage donnée dans le PIValues
+    * @ return string $path
+    */
+    private function getTemplatePath() {
+        switch ($this->PIValues['displayMode']) {
+            case 'liste' :
+                $path = $this->conf['templateFile'];
+                break;
+            
+            case 'bxslider' :
+                $path = $this->conf['templateBxSlider'];
+                break;
+            
+            case 'slide estro' :
+                $path = $this->conf['templateEstro'];
+                break;
+            
+            default :
+                $path = $this->conf['templateFile'];
+                break;
+        }
+        
+        return $path;
+    }
   
-  /**
+    
+    /**
     * Retourne un tableau contenant le paramétrage du plugin pi_flexform
     */
     private function getOptions() {
-    	$fields = $this->getPIValues();
-    	$fields['selOption'] = intval(@$fields['selOption']);
-    	$fields['affOption'] = intval(@$fields['affOption']);
-    	return $fields;
+        $fields = $this->getPIValues();
+        $fields['selOption'] = intval(@$fields['selOption']);
+        $fields['affOption'] = intval(@$fields['affOption']);
+        
+        return $fields;
     }    
+    
+    
     /**
     * Permet de retailler une image 
     */
@@ -187,78 +199,116 @@ class user_listingpacks_pi1 extends tslib_pibase {
             $lConf['file.']['height']=$maxH.'c';
             $lConf['file.']['width']=$maxW.'c';
         }
+        
         return $this->cObj->cImage($img["file"], $lConf);
     }  
     
+    
     /**
-     * Retourne les uid des sous-pages de la page courante passé en paramètre
+     * Met à jours les uid et link des sous-pages de la page courante passé en paramètre
      * L'ordre des uids peuvent être désordonnés. Cela correspond à l'ordre des sous-pages
      * @param string $pageID
      */
-    private function getUIDs($pageID) {
-        if ($pageID != null) {
-            $subPageID = array();
-            $query = $GLOBALS["TYPO3_DB"]->exec_SELECTquery('uid,pid,deleted', 'pages', 'pid='.$pageID.' AND deleted=0');
+    private function getSubPageUIDs($pageID) {
+        $this->infoPage = array();
+    	
+    	if ($pageID != null) {
+	    // ED 22/03/12 On ne doit pas voir les pages cachées
+            $query = $GLOBALS["TYPO3_DB"]->exec_SELECTquery('uid,pid,deleted,mount_pid,doktype,hidden', 'pages', 'pid='.$pageID.' AND deleted=0 AND hidden=0');
             while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($query)) {
-                if ($row['deleted'] == 0) {
-                    array_push($subPageID, $row['uid']);
+            	if ($row['deleted'] != 0) continue;
+            	$page = array();
+            	switch ($row['doktype']) {
+                	case 1 : /* type = Standard */ 
+                		$page['uid']   = $row['uid'];
+                		$page['link'] = $row['uid'];
+                	    break;
+                	case 7:  /* type = Mount Page */
+                		$page['uid'] = $row['mount_pid'];
+                		$page['link'] = $row['uid'];
+                	break;
                 }
+                $this->infoPage[] = $page;
+                
             }
             $GLOBALS['TYPO3_DB']->sql_free_result($query);
-            return $subPageID;
             
         } else {
             return null;
         }
     }
+    
+    
     /**
     * Retourne les uid des pages sélectionné 
     */
     private function getPacks() {
-    	return explode(',',$this->options['listpacks']);
-    }
-
-    /**
-    * Retourne un tableau contenant les informations de contenu  pi_flexform de chaque page passée en paramètre
-    * @param array $pageID : ID des pages
-    * @return array : uid, code, name, intro, image2_c
-    */
-    private function getinfoContent($uid) {
-    	
-    	$info = array();
-    	$info['uid']= $uid;
-    	$query = $GLOBALS["TYPO3_DB"]->exec_SELECTquery('uid,pi_flexform,deleted,list_type', 'tt_content',  'deleted=0 AND hidden=0 AND pid='.$uid);
-		$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($query);
-
-		if (count($row) !== 4) return $info;
-    	switch ($row['list_type']) {
-    		case 'user_azelizsalesforce_packs_pi1':
-    			/* Pack : recherche dans salesforce */
-    			/* TODO améliorer la recherche dans flexform */
-    			$data = $this->getPIValues($row['pi_flexform']);
-    			$info['PackCode']  = $data['PackCode'];
-    			$data = $this->getDataJson("opportunity/code/".$info['PackCode']);
-    			$info["Name"] = $data["Name"];
-    			$info["Intro"] = $data["intro__c"];
-    			$info["image2__c"] = $data["image2__c"];
-    			
-    			break;
-    	    case 'user_azelizsalesforce_produit_pi1':
-    	    	$data = $this->getPIValues($row['pi_flexform']);
-    	    	$info['PackCode']  = $data['ProductCode'];
-    	    	$info["Name"] = $data["Name"];
-    	    	$info["Intro"] = $data["Intro"];
-    	    	$info["image2__c"] = "fileadmin/produits/images/".$data["Image"];
-    	    	
-    	    	
-    		default:
-    			break;
-    	}
-    	
-		$GLOBALS['TYPO3_DB']->sql_free_result($query);
-		return $info;
+        return explode(',',$this->options['listpacks']);
     }
     
+
+    /**
+    * Retourne un tableau contenant les informations de contenu pi_flexform de chaque page passée en paramètre
+    * @param array $pageID : ID des pages
+    * @return array : code, name, intro, image2_c
+    */
+    private function getInfoContent($uid) {
+        $pack = array();
+        $pack_std = array();
+         // ED 22/03/12 On ne doit pas voir les contenues cachées
+        $res = $GLOBALS["TYPO3_DB"]->exec_SELECTquery('uid,pi_flexform,deleted,list_type,header,header_link,bodytext,image,CType,tx_templavoila_flex,subheader,sys_language_uid,hidden', 'tt_content', 'deleted=0 AND hidden=0 AND pid='.$uid);
+        
+        
+        while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
+
+		switch ($row['list_type']) {
+		    case 'user_azelizsalesforce_packs_pi1':
+		        $data = $this->getPIValues($row['pi_flexform']);
+		        $pack['PackCode']  = $data['PackCode'];
+		        $data = $this->getDataJson("opportunity/code/".$pack['PackCode']);
+		        $pack["Name"] = $data["Name"];
+		        $pack["Intro"] = $data["intro__c"];
+		        $pack["image2__c"] = $data["image2__c"];
+		        break;
+		        
+		    case 'user_azelizsalesforce_produit_pi1':
+		        $data = $this->getPIValues($row['pi_flexform']);
+		        $pack['PackCode']  = $data['ProductCode'];
+		        $pack["Name"] = $data["Name"];
+		        $pack["Intro"] = $data["Intro"];
+		        $pack["image2__c"] = "fileadmin/produits/images/".$data["Image"];
+		        break;
+		    case '' :
+		    	if ($row['CType'] == 'templavoila_pi1') {
+		    		$data = $this->getPIValues($row['tx_templavoila_flex']);
+				$temp = array();
+				$temp['PackCode']  = "";
+		    		$temp["Name"] = $row["header"];
+		    		$temp["Intro"] = $row['subheader'];
+		    		$temp["image2__c"] = "fileadmin/produits/".$data["field_image"];
+	   		    
+			  	/* cas du multilangue */
+				if ($GLOBALS['TSFE']->sys_language_uid ==  $row["sys_language_uid"] ) {
+		                   $pack = $temp;
+				}
+			  	/* cas du multilangue */
+				if ($row["sys_language_uid"] == 0) {
+		                   $pack_std = $temp;
+				}
+		    	}
+
+		    	break;
+		}
+	}
+	/* dans le cas ou l'on a pas trouvé de tranduction alors on affiche dans la langue standard */
+        if (count($pack) == 0) {
+	    $pack = $pack_std;	
+	}
+
+        $GLOBALS['TYPO3_DB']->sql_free_result($res);
+        
+        return $pack;
+    }
     
     
     /**
@@ -268,12 +318,17 @@ class user_listingpacks_pi1 extends tslib_pibase {
      * @return array or object : Suivant le paramètre $option
      */
     private function getDataJson($subURL, $options = Zend_Json::TYPE_ARRAY) {
-        $dataJson = file_get_contents($this->baseURL.$subURL);
+        /* on ajoute la langue */
+	$subURL .= '/lg/'.$GLOBALS['TSFE']->lang;  
+
+        $dataJson = file_get_contents(self::BASE_URL.$subURL);
         $data = Zend_Json::decode($dataJson, $options);
        
         
         return $data;
     }
+    
+    
     /**
     * Retourne un tableau contenant la configuration flexform du plugin coté Backend.
     * Le tableau organise les éléments sous la forme "key" => "value"
@@ -281,35 +336,35 @@ class user_listingpacks_pi1 extends tslib_pibase {
     *        Si null alors on retourne le flexform du plugin     
     * @return array $lConf
     */
-    private function getPIValues($xml_flexform=null) {
-
-    	if ($xml_flexform != null) {
-    		$piFlexForm = t3lib_div::xml2array($xml_flexform);
-    	} else {
-    		$this->pi_initPIflexform();
-    		$piFlexForm = $this->cObj->data['pi_flexform'];
-    	}
-    	$lConf = array(); // Setup our storage array...
-    	   
-    	foreach ($piFlexForm['data'] as $sheet => $data) {
-    		foreach ($data as $lang => $value) {
-    			foreach ($value as $key => $val) {
-    				if ( is_array($val) ) {
-    					// SI VRAI
-    					if ( array_key_exists("_TRANSFORM_vDEF.vDEFbase", $val) )
-    					$lConf[$key] = $val["_TRANSFORM_vDEF.vDEFbase"]; // Gère les balises p
-    					else
-    					$lConf[$key] = $val["vDEF"]; // Ne gère pas les balises p
-    				} else {
-    					$lConf[$key] = $this->pi_getFFvalue($piFlexForm, $key, $sheet);
-    				}
-    			}
-    		}
-    	}
-    	return $lConf;
+    private function getPIValues($xml_flexform = null) {
+        if ($xml_flexform != null) {
+            $piFlexForm = t3lib_div::xml2array($xml_flexform);
+        } else {
+            $this->pi_initPIflexform();
+            $piFlexForm = $this->cObj->data['pi_flexform'];
+            //Zend_Debug::dump($piFlexForm);
+        }
+        
+        $lConf = array(); // Setup our storage array...
+           
+        foreach ($piFlexForm['data'] as $sheet => $data) {
+            foreach ($data as $lang => $value) {
+            	if ($lang != 'lDEF') continue;
+                foreach ($value as $key => $val) {
+                    if ( is_array($val) ) {
+                        // SI VRAI
+                        if ( array_key_exists("_TRANSFORM_vDEF.vDEFbase", $val) )
+                        $lConf[$key] = $val["_TRANSFORM_vDEF.vDEFbase"]; // Gère les balises p
+                        else
+                        $lConf[$key] = $val["vDEF"]; // Ne gère pas les balises p
+                    } else {
+                        $lConf[$key] = $this->pi_getFFvalue($piFlexForm, $key, $sheet);
+                    }
+                }
+            }
+        }
+        return $lConf;
     }
-    
-    
 }
 
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/user_listing_packs/pi1/class.user_listingpacks_pi1.php'])    {

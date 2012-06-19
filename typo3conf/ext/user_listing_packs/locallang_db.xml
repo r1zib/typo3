@@ -6,10 +6,10 @@
 	</meta>
 	<data type="array">
 		<languageKey index="default" type="array">
-			<label index="tt_content.list_type_pi1">nke packs list</label>
+			<label index="tt_content.list_type_pi1">Liste des pages</label>
 		</languageKey>
-		<languageKey index="fr" type="array">
-			<label index="tt_content.list_type_pi1">Listing packs nke</label>
+		<languageKey index="en" type="array">
+			<label index="tt_content.list_type_pi1">List pages</label>
 		</languageKey>
 	</data>
 </T3locallang>

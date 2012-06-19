@@ -6,10 +6,17 @@
 	</meta>
 	<data type="array">
 		<languageKey index="default" type="array">
-			<label index="tt_content.list_type_pi1">Contacts Azeliz</label>
+			<label index="tt_content.list_type_pi1">Contact's form</label>
+			<label index="formulaire">Form :</label>
+			<label index="contact">Contact form</label>
+			<label index="pdf">pdf</label>
+                        <label index="other">Contact other</label>
 		</languageKey>
 		<languageKey index="fr" type="array">
-			<label index="tt_content.list_type_pi1">Contacts Azeliz</label>
+			<label index="tt_content.list_type_pi1">Formulaire de contact</label>
+			<label index="formulaire">Formulaire :</label>
+			<label index="contact">Formulaire de contact</label>
+			<label index="other">Formulaitre de contact autre</label>
 		</languageKey>
 	</data>
 </T3locallang>

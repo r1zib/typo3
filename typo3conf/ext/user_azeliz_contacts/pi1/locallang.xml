@@ -6,11 +6,58 @@
 	</meta>
 	<data type="array">
 		<languageKey index="default" type="array">
-			<label index="list_mode_1">Mode 1</label>
-			<label index="list_mode_2">Mode 2</label>
-			<label index="list_mode_3">Mode 3</label>
-			<label index="back">Back</label>
-			<label index="submit_button_label">Click here to submit value</label>
+			<label index="wait">Wait please ...</label>
+			<label index="ko_spam">Sorry, but we think you're a spammer.</label>
+			<label index="ko_maj">An error occurred when sending the message.</label>
+			<label index="ok_maj">Your message has been sent !</label>
+			<label index="ok_maj_contact_pdf_instru">Thank you, you can Download PDF</label>
+			<label index="oblig_lastname">Required field : Lastname</label>
+			<label index="oblig_firstname">Required field : Firstname</label>
+			<label index="pb_email">Your email address is not correct</label>
+			<label index="oblig_object">Required field : Object</label>
+			<label index="oblig_message">Required field : Message</label>
+			<label index="oblig_town">Required field : Town </label>
+			<label index="oblig_port">Required field : Por</label>
+			<label index="title_contact">Contact us</label>
+			<label index="title_contact_cart">About this product</label>
+			<label index="title_contact_ensavoirplus">About this product</label>
+			<label index="title_contact_pdf">Download PDF</label>
+			<label index="title_contact_autre">Trouvez votre revendeur</label>
+			<label index="label_lastname">Last name :</label>
+			<label index="label_firstname">First name :</label>
+			<label index="label_phone">Phone :</label>
+			<label index="label_email">Email :</label>
+			<label index="label_object">Object :</label>
+			<label index="label_message">Message :</label>
+			<label index="label_town">Ville de résidence :</label>
+			<label index="label_por">Port d'attache :</label>
+		</languageKey>
+		<languageKey index="fr" type="array">
+			<label index="wait">Veuillez patienter ...</label>
+			<label index="ko_spam">Désolé, mais nous pensons que vous êtes un spammer .</label>
+			<label index="ko_maj">Une erreur s'est produite lors de l'envoi du message .</label>
+			<label index="ok_maj">Votre demande est bien envoyée !</label>
+			<label index="ok_maj_contact_pdf_instru">Merci, vous pouvez Télécharger le PDF</label>
+			<label index="oblig_lastname">Veuillez renseigner votre nom</label>
+			<label index="oblig_firstname">Veuillez renseigner votre prénom</label>
+			<label index="pb_email">Votre e-mail est incorrect</label>
+			<label index="oblig_object">Veuillez renseigner l'objet du message</label>
+			<label index="oblig_message">Veuillez renseigner le corp du message</label>
+			<label index="oblig_town">Veuillez renseigner votre ville</label>
+			<label index="oblig_port">Veuillez renseigner votre port d'attache</label>
+			<label index="title_contact">Contactez nke instrumentation</label>
+			<label index="title_contact_cart">Cette offre m'intéresse</label>
+			<label index="title_contact_ensavoirplus">En savoir +</label>
+			<label index="title_contact_pdf">Recevez ce pack au format PDF</label>
+			<label index="title_contact_autre">Trouvez votre revendeur</label>
+			<label index="label_lastname">Nom :</label>
+			<label index="label_firstname">Prénom :</label>
+			<label index="label_phone">Téléphone :</label>
+			<label index="label_email">Email :</label>
+			<label index="label_object">Objet :</label>
+			<label index="label_message">Message :</label>
+			<label index="label_town">Ville de résidence :</label>
+			<label index="label_por">Port d'attache :</label>
 		</languageKey>
 	</data>
 </T3locallang>

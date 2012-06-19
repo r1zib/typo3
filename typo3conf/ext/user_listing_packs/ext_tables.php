@@ -19,6 +19,6 @@ $TCA["tt_content"]["types"]["list"]["subtypes_addlist"][$_EXTKEY."_pi1"]="pi_fle
 t3lib_extMgm::addPiFlexFormValue($_EXTKEY.'_pi1', 'FILE:EXT:'.$_EXTKEY.'/flexform_ds.xml');
 
 /* permet d'ajouter une feuille de style ou des librairies JS particulières */
-t3lib_extMgm::addStaticFile($_EXTKEY, 'pi1/static/', 'listingPack');
+t3lib_extMgm::addStaticFile($_EXTKEY, 'pi1/static/', 'liste des pages');
 
 ?>
